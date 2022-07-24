@@ -30,26 +30,25 @@ void web::webmgr::run(int port) {
 
         resp_srv2.then(
             [responseheap](Response srvresponse) mutable {
-                auto peerlocked = responseheap->getPeer();
+                auto response = std::move(responseheap);
+                auto peerlocked = response->getPeer();
 
                 if (!peerlocked) {
                     // Client disconnected
                     return;
                 }
-
-                auto response = std::move(responseheap);
                 // set mime type...
                 response->send(srvresponse.code(), srvresponse.body());
             },
             [responseheap](std::exception_ptr exc) mutable {
-                auto peerlocked = responseheap->getPeer();
+                auto response = std::move(responseheap);
+                auto peerlocked = response->getPeer();
 
                 if (!peerlocked) {
                     // Client disconnected
                     return;
                 }
 
-                auto response = std::move(responseheap);
                 PrintException excPrinter;
                 excPrinter(std::move(exc));
 
