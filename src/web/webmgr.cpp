@@ -29,22 +29,28 @@ void web::webmgr::run(int port) {
         resp.response = nullptr;
 
         resp_srv2.then(
-            [responseheap](Response srvresponse) {
+            [responseheap](Response srvresponse) mutable {
+                auto response = std::move(responseheap);
                 // set mime type...
-                responseheap->send(srvresponse.code(), srvresponse.body());
+                response->send(srvresponse.code(), srvresponse.body());
             },
-            [responseheap](std::exception_ptr exc) {
+            [responseheap](std::exception_ptr exc) mutable {
+                auto response = std::move(responseheap);
                 PrintException excPrinter;
                 excPrinter(std::move(exc));
 
                 // set mime type...
-                responseheap->send(Code::Internal_Server_Error, "{}");
+                response->send(Code::Internal_Server_Error, "{}");
             });
     };
 
     auto delayedResponse = [](Req /*req*/, Resp resp) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        resp.send(Code::Ok, "Some response");
+        std::string strresp;
+
+        strresp.resize(8192 * 2, 'A');
+
+        resp.send(Code::Ok, strresp);
     };
 
     using fn_t = RouterWrapper::respnotviaretfn_t;
