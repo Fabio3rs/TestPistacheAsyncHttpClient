@@ -1,4 +1,4 @@
-set(projectname testTistacheClient)
+set(projectname testPistacheClient)
 
 cmake_minimum_required(VERSION 3.6.0)
 project(${projectname} VERSION 0.1.1)
