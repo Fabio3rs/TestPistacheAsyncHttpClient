@@ -28,17 +28,27 @@ void web::webmgr::run(int port) {
             std::make_shared<ResponseWriter>(std::move(*resp.response));
         resp.response = nullptr;
 
-        auto peerlocked = responseheap->getPeer();
-
         resp_srv2.then(
-            [responseheap, peerlocked](Response srvresponse) mutable {
-                auto peerfd = std::move(peerlocked);
+            [responseheap](Response srvresponse) mutable {
+                auto peerlocked = responseheap->getPeer();
+
+                if (!peerlocked) {
+                    // Client disconnected
+                    return;
+                }
+
                 auto response = std::move(responseheap);
                 // set mime type...
                 response->send(srvresponse.code(), srvresponse.body());
             },
-            [responseheap, peerlocked](std::exception_ptr exc) mutable {
-                auto peerfd = std::move(peerlocked);
+            [responseheap](std::exception_ptr exc) mutable {
+                auto peerlocked = responseheap->getPeer();
+
+                if (!peerlocked) {
+                    // Client disconnected
+                    return;
+                }
+
                 auto response = std::move(responseheap);
                 PrintException excPrinter;
                 excPrinter(std::move(exc));
